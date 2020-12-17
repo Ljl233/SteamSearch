@@ -9,24 +9,36 @@ import com.ljl.steamsearch.model.repo.GameRepository;
 import com.ljl.steamsearch.parse.RetrievePage;
 import com.ljl.steamsearch.util.FileUtils;
 import com.ljl.steamsearch.util.MathUtils;
+import org.apache.lucene.index.DirectoryReader;
+import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.index.Term;
+import org.apache.lucene.search.*;
+import org.apache.lucene.store.NIOFSDirectory;
 import org.jsoup.Jsoup;
 import org.jsoup.helper.HttpConnection;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
+import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 
 import static com.ljl.steamsearch.parse.PageParser.getGameCommentRequestFromHref;
 import static com.ljl.steamsearch.parse.PageParser.getGameId;
 
 @RestController
 public class SteamController {
+
+    @Value("${indexStorePath}")
+    private String INDEX_STORE_PATH;
 
     @Autowired
     private GameRepository gameRepo;
@@ -49,14 +61,52 @@ public class SteamController {
         return "crawl steam and save game info to database";
     }
 
-    @Test
-    public void crawl() {
-        HashSet<String> hrefs = FileUtils.readFileByLines("gamesUrls.txt");
+    @GetMapping("/query/games/{keywords}")
+    public List<Game> searchGames(@PathVariable String keywords) {
+        List<Game> games = new ArrayList<>();
+        try {
+            IndexReader reader = DirectoryReader.open(new NIOFSDirectory(Paths.get(INDEX_STORE_PATH)));
+            IndexSearcher searcher = new IndexSearcher(reader);
+            Term term = new Term("gameName", keywords);
+            Query query = new TermQuery(term);
+            TopDocs topDocs = searcher.search(query, 10);
 
-        String href = "https://store.steampowered.com/app/267220/Line_Of_Defense_Tactics__Tactical_Advantage/";
-        saveGame(href);
-        saveComments();
+            ScoreDoc[] scoreDocs = topDocs.scoreDocs;
+            for (ScoreDoc scoreDoc : scoreDocs) {
+                org.apache.lucene.document.Document doc = searcher.doc(scoreDoc.doc);
 
+                Game game = gameRepo.findById(Integer.parseInt(doc.getField("id").stringValue())).orElse(null);
+                games.add(game);
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return games;
+    }
+
+    @GetMapping("/query/comments/{keywords}")
+    public List<Comment> searchComments(@PathVariable String keywords) {
+        List<Comment> comments = new ArrayList<>();
+        try {
+            IndexReader reader = DirectoryReader.open(new NIOFSDirectory(Paths.get(INDEX_STORE_PATH)));
+            IndexSearcher searcher = new IndexSearcher(reader);
+            Term term = new Term("content", keywords);
+            Query query = new TermQuery(term);
+            TopDocs topDocs = searcher.search(query, 10);
+
+            ScoreDoc[] scoreDocs = topDocs.scoreDocs;
+            for (ScoreDoc scoreDoc : scoreDocs) {
+                org.apache.lucene.document.Document doc = searcher.doc(scoreDoc.doc);
+
+                Comment comment = commentRepo.findById(Integer.parseInt(doc.getField("id").stringValue())).orElse(null);
+                comments.add(comment);
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return comments;
     }
 
     public boolean saveGame(String href) {

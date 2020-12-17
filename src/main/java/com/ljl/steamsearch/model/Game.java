@@ -65,4 +65,16 @@ public class Game {
     public void setComments(int comments) {
         this.comments = comments;
     }
+
+    @Override
+    public String toString() {
+        return "Game{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", gameId='" + gameId + '\'' +
+                ", type='" + type + '\'' +
+                ", publishDate='" + publishDate + '\'' +
+                ", comments=" + comments +
+                '}';
+    }
 }

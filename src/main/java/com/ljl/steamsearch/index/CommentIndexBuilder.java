@@ -34,6 +34,7 @@ public class CommentIndexBuilder {
         mComments.forEach(comment -> {
             Document doc = new Document();
 
+            doc.add(new StringField("id", String.valueOf(comment.getId()), Field.Store.YES));
             doc.add(new StringField("gameName", comment.getGameName(), Field.Store.YES));
             doc.add(new TextField("content", comment.getContent(), Field.Store.YES));
             doc.add(new StringField("url",
