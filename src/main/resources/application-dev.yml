@@ -15,4 +15,4 @@ spring:
     show-sql: true
 
 property:
-  indexStorePath: "E:\IdeaProject"
+  indexStorePath: E:\IdeaProject

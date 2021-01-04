@@ -29,13 +29,13 @@ public class CommentIndexBuilder {
         }
     }
 
-    private void buildIndex() throws IOException {
+    public void buildIndex() throws IOException {
         List<Document> docs = new ArrayList<>();
         mComments.forEach(comment -> {
             Document doc = new Document();
 
             doc.add(new StringField("id", String.valueOf(comment.getId()), Field.Store.YES));
-            doc.add(new StringField("gameName", comment.getGameName(), Field.Store.YES));
+            doc.add(new TextField("gameName", comment.getGameName(), Field.Store.YES));
             doc.add(new TextField("content", comment.getContent(), Field.Store.YES));
             doc.add(new StringField("url",
                     "https://store.steampowered.com/app/" + comment.getId(), Field.Store.YES));

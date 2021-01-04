@@ -31,13 +31,13 @@ public class GameIndexBuilder {
         }
     }
 
-    private void buildIndex() throws IOException {
+    public void buildIndex() throws IOException {
         List<Document> docs = new ArrayList<>();
         mGames.forEach(game -> {
             Document doc = new Document();
 
             doc.add(new StringField("id", String.valueOf(game.getId()), Field.Store.YES));
-            doc.add(new StringField("gameName", game.getName(), Field.Store.YES));
+            doc.add(new TextField("gameName", game.getName(), Field.Store.YES));
             doc.add(new TextField("type", game.getType(), Field.Store.YES));
             doc.add(new StringField("url",
                     "https://store.steampowered.com/app/" + game.getGameId(), Field.Store.YES));
